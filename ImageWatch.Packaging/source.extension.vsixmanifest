@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="VisualCPPTeam.ImageWatch2022" Version="1.0.22" Language="en-US" Publisher="Microsoft" />
-        <DisplayName>Image Watch for Visual Studio 2022</DisplayName>
-        <Description xml:space="preserve">Provides a watch window for visualizing in-memory images (bitmaps) when debugging native C++ code for Visual Studio 2022.</Description>
-        <MoreInfo>http://go.microsoft.com/fwlink/?LinkId=2166368</MoreInfo>
-        <License>EULA.rtf</License>
+        <Identity Id="PatrikHuber.ImageWatch" Version="1.1.0" Language="en-US" Publisher="Patrik Huber" />
+        <DisplayName>Image Watch</DisplayName>
+        <Description xml:space="preserve">Provides a watch window for visualizing in-memory images and matrix types when debugging native C++ code.</Description>
+        <MoreInfo>https://github.com/patrikhuber/image-watch</MoreInfo>
+        <License>LICENSE.rtf</License>
         <Icon>ImageWatch.png</Icon>
         <Tags>image; bitmap; visualizer; viewer; c++; debugging; opencv</Tags>
     </Metadata>
