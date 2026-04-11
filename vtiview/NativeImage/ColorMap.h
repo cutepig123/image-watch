@@ -915,6 +915,102 @@ public:
 	}
 };
 
+class MatlabJetColorMap : public ColorMap
+{
+public:
+	virtual std::wstring GetName() const
+	{
+		return L"Matlab Jet";
+	}
+
+	virtual bool IsCompatibleWith(const vt::CImgInfo& info) const
+	{
+		return info.Bands() == 1 &&
+			(EL_FORMAT(info.type) == EL_FORMAT_SBYTE ||
+			EL_FORMAT(info.type) == EL_FORMAT_BYTE ||
+			EL_FORMAT(info.type) == EL_FORMAT_SSHORT ||
+			EL_FORMAT(info.type) == EL_FORMAT_SHORT ||
+			EL_FORMAT(info.type) == EL_FORMAT_HALF_FLOAT ||
+			EL_FORMAT(info.type) == EL_FORMAT_FLOAT ||
+			EL_FORMAT(info.type) == EL_FORMAT_INT ||
+			EL_FORMAT(info.type) == EL_FORMAT_DOUBLE);
+	}
+
+	virtual double GetDomainStart(int elementFormat) const
+	{
+		return GetDefaultDomainStart(elementFormat);
+	}
+
+	virtual double GetDomainEnd(int elementFormat) const
+	{
+		return GetDefaultDomainEnd(elementFormat);
+	}
+
+	virtual HRESULT Map(const vt::CImg& src, vt::CRGBAByteImg& dst) const
+	{
+		if (EL_FORMAT(src.GetType()) != EL_FORMAT_FLOAT || src.Bands() != 1)
+			return E_FAIL;
+
+		for (int y = 0; y < src.Height(); ++y)
+		{
+			const float* srcPtr =
+				reinterpret_cast<const float*>(src.BytePtr(0, y));
+			vt::RGBAPix* dstPtr = dst.Ptr(y);
+
+			for (int x = 0; x < src.Width(); ++x)
+			{
+				float t = srcPtr[x];
+				if (t < 0.f) t = 0.f;
+				if (t > 1.f) t = 1.f;
+
+				float r, g, b;
+				if (t < 0.125f)
+				{
+					r = 0.f;
+					g = 0.f;
+					b = 0.5f + 4.f * t;
+				}
+				else if (t < 0.375f)
+				{
+					r = 0.f;
+					g = 4.f * (t - 0.125f);
+					b = 1.f;
+				}
+				else if (t < 0.625f)
+				{
+					r = 4.f * (t - 0.375f);
+					g = 1.f;
+					b = 1.f - 4.f * (t - 0.375f);
+				}
+				else if (t < 0.875f)
+				{
+					r = 1.f;
+					g = 1.f - 4.f * (t - 0.625f);
+					b = 0.f;
+				}
+				else
+				{
+					r = 1.f - 4.f * (t - 0.875f);
+					g = 0.f;
+					b = 0.f;
+				}
+
+				dstPtr[x].r = static_cast<vt::Byte>(r * 255.f);
+				dstPtr[x].g = static_cast<vt::Byte>(g * 255.f);
+				dstPtr[x].b = static_cast<vt::Byte>(b * 255.f);
+				dstPtr[x].a = 255;
+			}
+		}
+
+		return S_OK;
+	}
+
+	virtual bool UsesAlpha(const vt::CImgInfo&) const
+	{
+		return false;
+	}
+};
+
 class ColorMapStore
 {
 private:
@@ -931,12 +1027,13 @@ private:
 	YVUColorMap yvuColorMap_;
 	RGBFlippedColorMap rgbFlippedColorMap_;
 	RGBAFlippedColorMap rgbaFlippedColorMap_;
+	MatlabJetColorMap matlabJetColorMap_;
 
 public:
 	ColorMapStore()
 	{
-		// NOTE: the order here determines which map gets returned by 
-		// GetDefaultMapName 
+		// NOTE: the order here determines which map gets returned by
+		// GetDefaultMapName
 		maps_.push_back(&defaultColorMap_);
 		maps_.push_back(&redGreenColorMap_);
 		maps_.push_back(&firstThreeBGRColorMap_);
@@ -946,6 +1043,7 @@ public:
 		maps_.push_back(&yvuColorMap_);
 		maps_.push_back(&rgbFlippedColorMap_);
 		maps_.push_back(&rgbaFlippedColorMap_);
+		maps_.push_back(&matlabJetColorMap_);
 	}
 
 	const ColorMap* GetNullMap() const
