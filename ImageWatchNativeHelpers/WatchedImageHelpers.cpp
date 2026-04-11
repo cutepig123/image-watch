@@ -541,7 +541,7 @@ bool Microsoft::ImageWatch::WatchedImageHelpers::ReadMemory(
 
 bool Microsoft::ImageWatch::WatchedImageHelpers::LoadRemoteVTCImg(
 	vt::IImageReaderWriter* img, UInt64 pixelAddress, int numStrideBytes,
-	Microsoft::VisualStudio::Debugger::DkmProcess^ process)
+	int numColStrideBytes, Microsoft::VisualStudio::Debugger::DkmProcess^ process)
 {
 	if (img == nullptr)
 		return false;
@@ -555,6 +555,59 @@ bool Microsoft::ImageWatch::WatchedImageHelpers::LoadRemoteVTCImg(
 	if (process == nullptr)
 		return false;
 
+	auto info = img->GetImgInfo();
+	const int pixelSize = info.PixSize();
+
+	// When col_stride is specified and differs from pixel size, pixels
+	// within a row are not contiguous. Read the full memory extent and
+	// rearrange into contiguous rows.
+	if (numColStrideBytes > 0 && numColStrideBytes != pixelSize)
+	{
+		AutoLock lock(Microsoft::ImageWatch::WatchedImageHelpers::BufferLock);
+		static std::vector<unsigned char> srcBuffer;
+		static std::vector<unsigned char> dstBuffer;
+
+		// Total memory extent: last pixel is at
+		// (height-1)*rowStride + (width-1)*colStride, plus pixelSize bytes
+		const UInt64 extent = (UInt64)(info.height - 1) * numStrideBytes
+			+ (UInt64)(info.width - 1) * numColStrideBytes + pixelSize;
+
+		try
+		{
+			srcBuffer.resize((size_t)extent);
+			dstBuffer.resize((size_t)info.width * pixelSize * info.height);
+		}
+		catch (std::bad_alloc&)
+		{
+			return false;
+		}
+
+		if (!ReadMemory(process, pixelAddress, &srcBuffer[0], (UInt32)extent))
+			return false;
+
+		// Rearrange: pixel(r,c) = src[r * rowStride + c * colStride]
+		for (int r = 0; r < info.height; ++r)
+		{
+			unsigned char* dstRow = &dstBuffer[r * info.width * pixelSize];
+			for (int c = 0; c < info.width; ++c)
+			{
+				const size_t srcOffset =
+					(size_t)r * numStrideBytes + (size_t)c * numColStrideBytes;
+				memcpy(dstRow + c * pixelSize, &srcBuffer[srcOffset], pixelSize);
+			}
+		}
+
+		// Create contiguous image from rearranged buffer
+		const int contiguousStride = info.width * pixelSize;
+		vt::CImg bufImg;
+		if (FAILED(bufImg.Create(&dstBuffer[0], info.width, info.height,
+			contiguousStride, info.type)))
+			return false;
+
+		return SUCCEEDED(img->WriteImg(bufImg));
+	}
+
+	// Default fast path: pixels are contiguous within rows
 	AutoLock lock(Microsoft::ImageWatch::WatchedImageHelpers::BufferLock);
 	static std::vector<unsigned char> buffer;
 	try
@@ -566,9 +619,7 @@ bool Microsoft::ImageWatch::WatchedImageHelpers::LoadRemoteVTCImg(
 		return false;
 	}
 
-	auto info = img->GetImgInfo();
-
-	const int maxRowsPerRead = 
+	const int maxRowsPerRead =
 		vt::VtMax((int)buffer.size() / numStrideBytes, 1);
 
 	UInt64 readPtr = pixelAddress;
@@ -576,7 +627,7 @@ bool Microsoft::ImageWatch::WatchedImageHelpers::LoadRemoteVTCImg(
 	{
 		const int numRowsToRead = Math::Min(numRowsLeft, maxRowsPerRead);
 		const int numBytesToRead = numRowsToRead * numStrideBytes;
-		
+
 		if (!ReadMemory(process, readPtr, &buffer[0], numBytesToRead))
 			return false;
 
@@ -586,7 +637,7 @@ bool Microsoft::ImageWatch::WatchedImageHelpers::LoadRemoteVTCImg(
 			return false;
 
 		if (FAILED(img->WriteRegion(
-			vt::CRect(0, info.height - numRowsLeft, info.width, 
+			vt::CRect(0, info.height - numRowsLeft, info.width,
 			info.height - numRowsLeft + numRowsToRead), bufImg)))
 			return false;
 

@@ -51,6 +51,7 @@ namespace Microsoft
 			UInt32 NumBands;
 			UInt64 PixelAddress;
 			UInt32 NumStrideBytes;
+			UInt32 NumColStrideBytes; // 0 = default (pixels contiguous within row)
 		};
 		
 		///////////////////////////////////////////////////////////////////////
@@ -119,10 +120,11 @@ namespace Microsoft
 				return NumPlanes() > 0 ? planeInfo_[0].NumStrideBytes : 0;
 			}
 			
-			static cli::array<PlaneInfo>^ MakePlaneInfos(UInt32 numPlanes, 
-				UInt32 numBands, UserPixelFormat pixelFormat, UInt32 width, 
-				UInt32 height, 
-				cli::array<UInt64>^ addressArr, cli::array<UInt32>^ strideArr);
+			static cli::array<PlaneInfo>^ MakePlaneInfos(UInt32 numPlanes,
+				UInt32 numBands, UserPixelFormat pixelFormat, UInt32 width,
+				UInt32 height,
+				cli::array<UInt64>^ addressArr, cli::array<UInt32>^ strideArr,
+				cli::array<UInt32>^ colStrideArr);
 
 			static bool ParsePixelFormat(String^ pfstring, 
 				UserPixelFormat% format, UInt32% numBands, String^% cmapname);

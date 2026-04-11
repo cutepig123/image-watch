@@ -105,8 +105,8 @@ namespace Microsoft
 			static bool ValidateVTCImgInfo(int width, int height,
 				int type, int numStrideBytes, UInt64 pixelAddress);
 
-			static bool LoadRemoteVTCImg(vt::IImageReaderWriter* img, 
-				UInt64 pixelAddress, int numStrideBytes, 
+			static bool LoadRemoteVTCImg(vt::IImageReaderWriter* img,
+				UInt64 pixelAddress, int numStrideBytes, int numColStrideBytes,
 				Microsoft::VisualStudio::Debugger::DkmProcess^ process);
 
 			static bool LoadRemoteVTCImgInCacheInfo(int% width, int% height, 

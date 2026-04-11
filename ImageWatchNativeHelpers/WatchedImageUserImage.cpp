@@ -39,8 +39,19 @@ Microsoft::ImageWatch::WatchedImageInfo^
 	if (NumPlanes() == 1 && pixelFormat_ != UserPixelFormat::YUY2)
 	{
 		info->HasNativePixelAddress = true;
-		info->NumStrideBytes = NumStrideBytes();
 		info->PixelAddress = PixelAddress();
+
+		// When col_stride is in use, pixels aren't contiguous in a row.
+		// After LoadRemoteVTCImg rearranges them the image becomes
+		// contiguous, so report width * bytesPerPixel as the stride for
+		// downstream validation and pixel-address arithmetic.
+		auto pi = planeInfo_[0];
+		int pixelSize = VT_IMG_ELSIZE(elementFormat_) * NumBands();
+		bool hasColStride = pi.NumColStrideBytes > 0
+			&& pi.NumColStrideBytes != (UInt32)pixelSize;
+		info->NumStrideBytes = hasColStride
+			? (info->Width * info->NumBytesPerPixel)
+			: NumStrideBytes();
 	}
 	else
 	{
@@ -152,11 +163,11 @@ void Microsoft::ImageWatch::WatchedImageUserImage::DoReloadInfo(
 	return; \
 	}
 
-	// NOTE: don't log errors in GETVALUESTRING! 
-	// our contract with the .natvis author: if property shows 
+	// NOTE: don't log errors in GETVALUESTRING!
+	// our contract with the .natvis author: if property shows
 	// up and it's ill-formatted, then we log an error. but if
 	// the property is missing, we simple stop image evaluation.
-	// this is important for allowing images to be in invalid or 
+	// this is important for allowing images to be in invalid or
 	// non-watchable states (weird pixel types, for example)
 #define GETVALUESTRING(name_) \
 	{ \
@@ -164,7 +175,7 @@ void Microsoft::ImageWatch::WatchedImageUserImage::DoReloadInfo(
 	if (!WatchedImageHelpers::GetPropertyChildValue(plist, name_, \
 	valueString, err)) \
 	return;\
-	} 
+	}
 
 	String^ valueString = nullptr;
 
@@ -236,8 +247,21 @@ void Microsoft::ImageWatch::WatchedImageUserImage::DoReloadInfo(
 		numStrideBytesArr->Length == (int)numPlanes))
 		EVALERROR("number of strides must be one or #planes");
 
+	// [col_stride] is optional (if absent, pixels assumed contiguous within row)
+	array<UInt32>^ numColStrideBytesArr = nullptr;
+	errString = "";
+	if (WatchedImageHelpers::GetPropertyChildValue(plist, "[col_stride]",
+		valueString, errString))
+	{
+		if (!TryParseUInt32Array(valueString, numColStrideBytesArr))
+			return;
+		if (!(numColStrideBytesArr->Length == 1 ||
+			numColStrideBytesArr->Length == (int)numPlanes))
+			EVALERROR("number of col_strides must be one or #planes");
+	}
+
 	planeInfo_ = MakePlaneInfos(numPlanes, numBandsPerPlane, pixelFormat_, width,
-		height, pixelAddressArr, numStrideBytesArr);
+		height, pixelAddressArr, numStrideBytesArr, numColStrideBytesArr);
 
 	if (planeInfo_ == nullptr)
 		return;
@@ -273,13 +297,24 @@ void Microsoft::ImageWatch::WatchedImageUserImage::DoReloadInfo(
 	for (int i = 0; i < planeInfo_->Length; ++i)
 	{
 		auto pi = planeInfo_[i];
-		
+
 		// make sure test succeed for yuy2, which is stored as 2 band ..
 		if (pixelFormat_ == UserPixelFormat::YUY2)
 			pi.NumBands = 2;
 
+		const int pixelSize = VT_IMG_ELSIZE(elementFormat_) * pi.NumBands;
+		const bool hasColStride = pi.NumColStrideBytes > 0
+			&& pi.NumColStrideBytes != (UInt32)pixelSize;
+
+		// When col_stride is in use (e.g. column-major layout), the row
+		// stride can be as small as one pixel.  Validate with an effective
+		// stride that covers one full row of data instead.
+		int strideForValidation = pi.NumStrideBytes;
+		if (hasColStride)
+			strideForValidation = pi.NumColStrideBytes * pi.Width;
+
 		if (!WatchedImageHelpers::ValidateVTCImgInfo(pi.Width, pi.Height,
-			VT_IMG_MAKE_TYPE(elementFormat_, pi.NumBands), pi.NumStrideBytes, 
+			VT_IMG_MAKE_TYPE(elementFormat_, pi.NumBands), strideForValidation,
 			pi.PixelAddress))
 		{
 			return;
@@ -485,8 +520,9 @@ void Microsoft::ImageWatch::WatchedImageUserImage::DoReloadPixels(
 			if (FAILED(yuy2.Share(yuy2rw)))
 				return;
 
-			if (!WatchedImageHelpers::LoadRemoteVTCImg(&yuy2rw, 
-				pi.PixelAddress, pi.NumStrideBytes, Process))
+			if (!WatchedImageHelpers::LoadRemoteVTCImg(&yuy2rw,
+				pi.PixelAddress, pi.NumStrideBytes,
+				pi.NumColStrideBytes, Process))
 				return;
 
 			vt::CImg yuy2unpacked;
@@ -503,9 +539,9 @@ void Microsoft::ImageWatch::WatchedImageUserImage::DoReloadPixels(
 		else
 		{
 			hasPixelsLoaded =
-				WatchedImageHelpers::LoadRemoteVTCImg(GetReaderWriter(), 
-				planeInfo_[0].PixelAddress, planeInfo_[0].NumStrideBytes, 
-				Process);
+				WatchedImageHelpers::LoadRemoteVTCImg(GetReaderWriter(),
+				planeInfo_[0].PixelAddress, planeInfo_[0].NumStrideBytes,
+				planeInfo_[0].NumColStrideBytes, Process);
 		}
 	}
 	else
@@ -528,8 +564,9 @@ void Microsoft::ImageWatch::WatchedImageUserImage::DoReloadPixels(
 			if (FAILED(plane.Share(planerw)))
 				return;
 
-			if (!WatchedImageHelpers::LoadRemoteVTCImg(&planerw, 
-				pi.PixelAddress, pi.NumStrideBytes, Process))
+			if (!WatchedImageHelpers::LoadRemoteVTCImg(&planerw,
+				pi.PixelAddress, pi.NumStrideBytes,
+				pi.NumColStrideBytes, Process))
 				return;
 
 			// upsample if necessary
@@ -645,11 +682,12 @@ bool Microsoft::ImageWatch::WatchedImageUserImage::ParsePixelFormat(
 	}
 }
 
-cli::array<PlaneInfo>^ 
+cli::array<PlaneInfo>^
 	Microsoft::ImageWatch::WatchedImageUserImage::MakePlaneInfos(
-	UInt32 numPlanes, UInt32 numBands, UserPixelFormat pixelFormat, 
-	UInt32 width, UInt32 height, 
-	cli::array<UInt64>^ addressArr, cli::array<UInt32>^ strideArr)
+	UInt32 numPlanes, UInt32 numBands, UserPixelFormat pixelFormat,
+	UInt32 width, UInt32 height,
+	cli::array<UInt64>^ addressArr, cli::array<UInt32>^ strideArr,
+	cli::array<UInt32>^ colStrideArr)
 {
 	// these cases should be handled outside this function, but just in case
 	if (addressArr == nullptr || strideArr == nullptr)
@@ -743,8 +781,12 @@ cli::array<PlaneInfo>^
 			}
 		}
 
-		pi[i].NumStrideBytes = strideArr->Length == 1 ? 
-			strideArr[0] : strideArr[i];	
+		pi[i].NumStrideBytes = strideArr->Length == 1 ?
+			strideArr[0] : strideArr[i];
+
+		pi[i].NumColStrideBytes = (colStrideArr != nullptr)
+			? (colStrideArr->Length == 1 ? colStrideArr[0] : colStrideArr[i])
+			: 0;
 	}
 
 	return pi;

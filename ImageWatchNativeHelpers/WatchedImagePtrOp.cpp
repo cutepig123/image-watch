@@ -109,7 +109,7 @@ void Microsoft::ImageWatch::WatchedImagePtrOp::DoReloadPixels(
 		return;
 
 	if (!WatchedImageHelpers::LoadRemoteVTCImg(
-		irw_, addr_, stride_, Process))
+		irw_, addr_, stride_, 0, Process))
 		return;
 
 	auto dst = GetReaderWriter();
@@ -126,7 +126,7 @@ vt::CTransformGraphNode* Microsoft::ImageWatch::WatchedImagePtrOp
 		return nullptr;
 
 	if (!WatchedImageHelpers::LoadRemoteVTCImg(irw_,
-		addr_, stride_, Process))
+		addr_, stride_, 0, Process))
 		return nullptr;
 	
 	vt::IMAGE_EXTEND ex(vt::Extend);

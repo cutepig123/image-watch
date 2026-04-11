@@ -144,6 +144,6 @@ void Microsoft::ImageWatch::WatchedImageD3D11Resource::DoReloadPixels(
 		return;
 
 	hasPixelsLoaded = WatchedImageHelpers::LoadRemoteVTCImg(
-		GetReaderWriter(), pixelAddress_, numStrideBytes_, Process);
+		GetReaderWriter(), pixelAddress_, numStrideBytes_, 0, Process);
 }
 
