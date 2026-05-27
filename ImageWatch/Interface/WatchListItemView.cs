@@ -89,6 +89,22 @@ namespace Microsoft.ImageWatch.Interface
                 view_.ClearOverlay();
             }
         }
+        
+        public void AddOverlayPoint(float x, float y, Color color, float radius, float lineWidth)
+        {
+            if (view_ != null)
+            {
+                view_.AddPoint(x, y, color, radius, lineWidth);
+            }
+        }
+        
+        public void AddOverlayLine(float x0, float y0, float x1, float y1, Color color, float lineWidth)
+        {
+            if (view_ != null)
+            {
+                view_.AddLine(x0, y0, x1, y1, color, lineWidth);
+            }
+        }
 
         public void EnableGrid(bool value)
         {

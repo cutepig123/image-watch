@@ -7,6 +7,31 @@ using System.Windows.Media;
 
 namespace Microsoft.ImageWatch.Interface
 {
+    // Helper classes for overlay data
+    public class OverlayPoint
+    {
+        public float X { get; set; }
+        public float Y { get; set; }
+        public Color Color { get; set; }
+        public float Radius { get; set; }
+    }
+    
+    public class OverlayLine
+    {
+        public float X0 { get; set; }
+        public float Y0 { get; set; }
+        public float X1 { get; set; }
+        public float Y1 { get; set; }
+        public Color Color { get; set; }
+        public float LineWidth { get; set; }
+    }
+    
+    public class OverlayData
+    {
+        public List<OverlayPoint> Points { get; set; } = new List<OverlayPoint>();
+        public List<OverlayLine> Lines { get; set; } = new List<OverlayLine>();
+    }
+
     public class WatchListItem : BindableBase, IDisposable
     {
         public WatchListItem(string watchExpression)
@@ -207,9 +232,128 @@ namespace Microsoft.ImageWatch.Interface
             {
                 DebugLogAction("load pixels");
                 image_.ReloadPixels();
+                
+                // ★ Load overlay data if this is an overlay expression
+                if (ExpressionHelper.IsOverlayExpression(Expression))
+                {
+                    LoadOverlayData();
+                }
             }
 
             ArePixelsOutOfDate = false;
+        }
+        
+        private void LoadOverlayData()
+        {
+            var parts = ExpressionHelper.ParseOverlayExpression(Expression);
+            if (parts == null)
+                return;
+            
+            string imageExpr = parts.Item1;
+            string overlayExpr = parts.Item2;
+            
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine(
+                "LoadOverlayData: image='{0}', overlay='{1}'", 
+                imageExpr, overlayExpr);
+#endif
+            
+            // Read overlay data from debugger
+            try
+            {
+                var overlayData = ReadOverlayFromDebugger(overlayExpr);
+                
+                // Apply to view
+                if (view_ != null && overlayData != null)
+                {
+                    view_.ClearOverlay();
+                    
+                    foreach (var point in overlayData.Points)
+                    {
+                        view_.AddOverlayPoint(
+                            point.X, point.Y, 
+                            point.Color, point.Radius, 1.0f);
+                    }
+                    
+                    foreach (var line in overlayData.Lines)
+                    {
+                        view_.AddOverlayLine(
+                            line.X0, line.Y0, line.X1, line.Y1,
+                            line.Color, line.LineWidth);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine(
+                    "LoadOverlayData failed: {0}", ex.Message);
+#endif
+            }
+        }
+        
+        private OverlayData ReadOverlayFromDebugger(string overlayExpr)
+        {
+            var result = new OverlayData();
+            
+            // Try to read as std::vector of points
+            // Expression: overlayExpr.size(), overlayExpr[i].x, overlayExpr[i].y
+            
+            string sizeExpr = string.Format("({0}).size()", overlayExpr);
+            string sizeValue = null;
+            string sizeType = null;
+            
+            if (!WatchedImageHelpers.EvaluateExpression(
+                MyToolWindow.TheController.InspectionContext,
+                MyToolWindow.TheController.Frame,
+                sizeExpr, ref sizeValue, ref sizeType))
+            {
+                return result;
+            }
+            
+            uint size = 0;
+            if (!uint.TryParse(sizeValue, out size))
+                return result;
+            
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine(
+                "Reading {0} overlay elements", size);
+#endif
+            
+            // Read points (limit to 500 for performance)
+            for (uint i = 0; i < size && i < 500; i++)
+            {
+                string xExpr = string.Format("({0})[{1}].x", overlayExpr, i);
+                string yExpr = string.Format("({0})[{1}].y", overlayExpr, i);
+                
+                string xValue = null, yValue = null;
+                string tempType = null;
+                
+                if (WatchedImageHelpers.EvaluateExpression(
+                    MyToolWindow.TheController.InspectionContext,
+                    MyToolWindow.TheController.Frame,
+                    xExpr, ref xValue, ref tempType) &&
+                    WatchedImageHelpers.EvaluateExpression(
+                    MyToolWindow.TheController.InspectionContext,
+                    MyToolWindow.TheController.Frame,
+                    yExpr, ref yValue, ref tempType))
+                {
+                    double x = 0, y = 0;
+                    if (double.TryParse(xValue, out x) && 
+                        double.TryParse(yValue, out y))
+                    {
+                        result.Points.Add(new OverlayPoint
+                        {
+                            X = (float)x,
+                            Y = (float)y,
+                            Color = System.Windows.Media.Colors.Red,
+                            Radius = 3.0f
+                        });
+                    }
+                }
+            }
+            
+            return result;
         }
 
         private void UpdateContext()

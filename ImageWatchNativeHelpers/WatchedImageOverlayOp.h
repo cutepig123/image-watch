@@ -1,36 +1,36 @@
 #pragma once
 
-#include "WatchedImage.h"
-#include "WatchedImageOperator.h"
+#include "WatchedImageImage.h"
 
 namespace Microsoft 
 {
     namespace ImageWatch
     {
         // @overlay(image, overlayData) operator
-        // This operator is special: it doesn't use Transform Graph
-        // Instead, it passes overlay data to NativeImageView for rendering
-        public ref class WatchedImageOverlayOp : public WatchedImageOperator
+        // Combines an image with overlay graphics data
+        // The second argument is overlay data expression (points, lines)
+        public ref class WatchedImageOverlayOp : public WatchedImageImage
         {
         public:
             WatchedImageOverlayOp();
-            ~WatchedImageOverlayOp();
+            virtual ~WatchedImageOverlayOp();
             !WatchedImageOverlayOp();
             
-        internal:
-            virtual vt::CTransformGraphNode* GetTransformGraphHead() override;
-            
         protected:
-            virtual array<Type^>^ DoGetArgumentTypes() override;
             virtual void DoReloadInfo(WatchedImageInfo^% info) override;
             virtual void DoReloadPixels(bool% hasPixelsLoaded) override;
             
         private:
+            String^ overlayDataExpr_;
             WatchedImage^ sourceImage_;
-            System::String^ overlayDataExpr_;
             
-            void ParseOverlayData();
-            void ApplyOverlayToView();
+            void ParseOverlayDataAndApply();
+            
+            // Helper methods for reading overlay data from debugger
+            bool ReadPointsArray(String^ arrayExpr);
+            bool ReadLinesArray(String^ arrayExpr);
+            bool EvaluateFloatMember(String^ objectExpr, String^ memberName, float% value);
+            bool EvaluateIntMember(String^ objectExpr, String^ memberName, int% value);
         };
     }
 }
