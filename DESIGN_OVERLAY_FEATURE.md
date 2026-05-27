@@ -6,6 +6,31 @@ This document describes the design for adding overlay graphics support to Image 
 
 ## Current Architecture Analysis
 
+### Image Type System
+
+Image Watch uses a **natvis-based type discovery system** to support various image types:
+
+1. **Built-in Types** - Hardcoded in `WatchedImageTypeMap.cs`:
+   - `vt::CImgInCache`, `vt::CTypedImgInCache` (VisionTools images)
+   - `ID3D11Resource`, `ID3D11Texture2D` (DirectX textures)
+
+2. **Natvis-Based User Types** - Loaded from `.natvis` files:
+   - OpenCV: `cv::Mat`, `CvMat`, `IplImage` (`ImageWatchOpenCV.natvis`)
+   - Eigen: Eigen matrix types (`ImageWatchEigen.natvis`)
+   - Unreal Engine: Various texture types (`ImageWatchUnrealEngine.natvis`)
+   - Custom user types from `%USERPROFILE%\Documents\Visual Studio 2022\Visualizers\`
+
+3. **How Natvis Works**:
+   - Natvis files define `<Type>` elements with `<UIVisualizer>` tags
+   - The `<Expand>` section specifies how to extract image metadata:
+     - `[type]` - Pixel type (UINT8, FLOAT32, etc.)
+     - `[channels]` - Number of color channels
+     - `[width]`, `[height]` - Image dimensions
+     - `[data]` - Pointer to pixel data
+     - `[stride]` - Bytes per row
+   - `UserTypeLoader.cs` parses natvis files and registers types
+   - When user adds a variable to watch, the type is matched and metadata extracted
+
 ### Rendering Pipeline
 
 The current rendering pipeline consists of:
@@ -42,6 +67,7 @@ The current rendering pipeline consists of:
 - The output is a single `InteropBitmap` displayed in WPF
 - There's no current mechanism for overlay graphics
 - Transform state (zoom/pan) is managed at multiple levels
+- **Natvis is the primary mechanism for supporting new data types**
 
 ## Proposed Architecture
 
@@ -282,48 +308,6 @@ public:
     void ClearOverlay();
 ```
 
-### 5. Create WatchedImage Overlay Operator
-
-**New files: `ImageWatchNativeHelpers/WatchedImageOverlayOp.h/.cpp`**
-
-This allows users to add overlay via expression syntax:
-
-```
-@overlay(img, points, lines, arcs)
-```
-
-Where points, lines, arcs are arrays in the debugged program.
-
-### 6. Create Overlay Data Provider Pattern
-
-Allow users to define overlay data in their C++ code:
-
-```cpp
-// User's debugged code
-struct DebugOverlayData
-{
-    std::vector<Point2f> points;
-    std::vector<std::pair<Point2f, Point2f>> lines;
-    std::vector<ArcData> arcs;
-};
-
-DebugOverlayData overlay_;
-```
-
-The extension would read this structure and render overlay on the associated image.
-
-### 7. UI Integration (Optional)
-
-Add overlay controls to ImageViewer context menu:
-
-- "Show Overlay" checkbox
-- "Overlay Color" picker
-- "Overlay Line Width" slider
-
-**Modify: `ImageWatch/Interface/ImageViewer.xaml`**
-
-Add context menu items for overlay settings.
-
 ## Alternative Design Options
 
 ### Option 2: WPF Overlay Canvas
@@ -342,70 +326,257 @@ Add a separate WPF canvas layer on top of the image bitmap.
 
 **Implementation:** Add `Canvas` in `ImageViewer.xaml` above the image, render WPF shapes with transform binding.
 
-### Option 3: Natvis-Based Overlay Definition
+### Option 3: Natvis-Based Overlay Definition (RECOMMENDED for Data Binding)
 
-Define overlay data structures via natvis files, similar to how user-defined image types work.
+Define overlay data structures via natvis files, following the same pattern as image types. This is **the preferred approach** for Phase 2 because it follows the existing architecture.
+
+#### How It Works
+
+1. **User defines overlay data structure in C++ code:**
+
+```cpp
+// User's debugged code
+struct OverlayPoint2D
+{
+    float x, y;
+};
+
+struct OverlayLine2D
+{
+    float x0, y0, x1, y1;
+};
+
+struct DebugOverlay
+{
+    std::vector<OverlayPoint2D> points;
+    std::vector<OverlayLine2D> lines;
+    // Color and style can be included
+    unsigned char r, g, b, a;
+};
+```
+
+2. **Create natvis file to describe the overlay:**
+
+**New file: `ImageWatchOverlay.natvis`**
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  
+  <!-- Overlay graphics type -->
+  <Type Name="DebugOverlay">
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" />
+  </Type>
+  
+  <Type Name="DebugOverlay">
+    <Expand>
+      <!-- Points array -->
+      <Item Name="[points]">points</Item>
+      <!-- Lines array -->
+      <Item Name="[lines]">lines</Item>
+      <!-- Color -->
+      <Item Name="[color_r]">r</Item>
+      <Item Name="[color_g]">g</Item>
+      <Item Name="[color_b]">b</Item>
+      <Item Name="[color_a]">a</Item>
+    </Expand>
+  </Type>
+  
+  <!-- Point type -->
+  <Type Name="OverlayPoint2D">
+    <Expand>
+      <Item Name="[x]">x</Item>
+      <Item Name="[y]">y</Item>
+    </Expand>
+  </Type>
+  
+  <!-- Line type -->
+  <Type Name="OverlayLine2D">
+    <Expand>
+      <Item Name="[x0]">x0</Item>
+      <Item Name="[y0]">y0</Item>
+      <Item Name="[x1]">x1</Item>
+      <Item Name="[y1]">y1</Item>
+    </Expand>
+  </Type>
+  
+</AutoVisualizer>
+```
+
+3. **Extend UserTypeLoader to support overlay types:**
+
+Modify `UserTypeLoader.cs` to:
+- Recognize overlay types (ServiceId Id="2")
+- Extract overlay-specific metadata ([points], [lines], [color_*])
+- Register overlay types separately from image types
+
+4. **Create WatchedImageOverlayOp operator:**
+
+**New files: `ImageWatchNativeHelpers/WatchedImageOverlayOp.h/.cpp`**
+
+This allows combining an image with overlay:
+
+```
+@overlay(myImage, myOverlay)
+```
+
+The operator:
+- Takes an image and overlay data structure as arguments
+- Reads overlay data from debugger using the natvis metadata
+- Populates the `OverlayGraphics` object in `NativeImageView`
+- Renders image + overlay together
 
 **Advantages:**
-- No code changes required in debugged program
-- Consistent with existing user type system
-- User customizable
+- **Follows existing architecture** - Uses the same natvis-based type discovery
+- **No code changes in debugged program** - Just add natvis file
+- **User customizable** - Users can define their own overlay structures
+- **Consistent with image type system** - Same parsing and registration mechanism
 
 **Disadvantages:**
-- Limited to static overlay definitions
-- More complex natvis authoring
+- Requires natvis file authoring (but users are already familiar with this for custom image types)
+- Limited to what can be expressed in natvis (but this is sufficient for most use cases)
 
 ## Implementation Priorities
 
-1. **Phase 1: Core Rendering** (Native C++ overlay primitives)
-   - Implement `OverlayPrimitives.h/.cpp`
-   - Extend `NativeImageView`
-   - Add managed wrapper
+### Phase 1: Core Rendering (Native C++ overlay primitives)
+**Goal:** Add rendering capability for overlay graphics
 
-2. **Phase 2: Data Binding** (Read overlay from debugged program)
-   - Create `WatchedImageOverlayOp`
-   - Parse overlay data structures from debugger
-   - Support standard types (cv::Point, std::vector)
+**Tasks:**
+1. Implement `OverlayPrimitives.h/.cpp` - Primitive types and rendering
+2. Extend `NativeImageView` - Add overlay storage and rendering
+3. Add managed wrapper (C++/CLI) - Expose overlay methods to C#
+4. Unit tests for rendering functions
 
-3. **Phase 3: UI Controls** (Optional)
-   - Add overlay context menu
-   - Overlay settings persistence
-   - Color/style customization
+**Deliverable:** Can programmatically add and render overlay graphics
 
-4. **Phase 4: Advanced Features** (Future)
-   - Interactive overlay editing
-   - Overlay export/save
-   - Multiple overlay layers
+**Effort:** 40-60 hours
+
+### Phase 2: Data Binding (Natvis-based overlay definition)
+**Goal:** Allow users to define overlay data in their code and have it automatically recognized
+
+**Tasks:**
+1. Create `ImageWatchOverlay.natvis` - Example overlay natvis file
+2. Extend `UserTypeLoader.cs` - Parse overlay types from natvis
+3. Create `WatchedImageOverlayOp` - Operator to combine image + overlay
+4. Integrate with expression parser - Support `@overlay(img, overlay)` syntax
+5. Test with standard types (cv::Point, std::vector)
+6. Documentation and examples
+
+**Deliverable:** Users can define overlay structures in C++, add natvis file, and use `@overlay()` to display
+
+**Effort:** 30-40 hours
+
+### Phase 3: UI Controls (Optional enhancement)
+**Goal:** Provide UI for overlay customization without code changes
+
+**Tasks:**
+1. Add overlay context menu in `ImageViewer.xaml`
+   - "Show Overlay" toggle
+   - "Overlay Color" picker
+   - "Line Width" slider
+   - "Point Size" slider
+2. Overlay settings persistence (save preferences)
+3. Per-image overlay settings
+
+**Deliverable:** Users can customize overlay appearance through UI
+
+**Effort:** 20-30 hours
+
+**Note:** This phase is optional because:
+- Phase 2 already allows full customization through C++ code and natvis
+- UI controls add convenience but aren't essential
+- Can be added later based on user feedback
+
+### Phase 4: Advanced Features (Future)
+**Goal:** Enhanced overlay functionality
+
+**Tasks:**
+1. Interactive overlay editing (click to add/move points)
+2. Overlay export/save (save annotations to file)
+3. Multiple overlay layers (group overlays)
+4. Overlay templates (predefined styles)
+
+**Effort:** TBD
 
 ## Testing Strategy
 
-1. Unit tests for overlay rendering (`OverlayPrimitives.cpp`)
-2. Manual testing with test applications (`Test/VTApp1`)
-3. Integration tests with various image types
-4. Performance benchmarks for large overlay sets
+1. **Unit tests** for overlay rendering (`OverlayPrimitives.cpp`)
+   - Test point, line, arc rendering
+   - Test coordinate transformation
+   - Test clipping and bounds
+
+2. **Integration tests** with natvis overlay types
+   - Test with `std::vector<cv::Point2f>`
+   - Test with custom overlay structures
+   - Test `@overlay()` operator
+
+3. **Manual testing** with test applications
+   - `Test/VTApp1` - Add overlay test cases
+   - Test with OpenCV types
+   - Test with large overlay sets
+
+4. **Performance benchmarks**
+   - Measure rendering time with 100, 1000, 10000 primitives
+   - Compare with/without overlay
 
 ## Dependencies
 
 - VisionTools drawing primitives (if available)
 - WPF InteropBitmap rendering
 - Debugger expression evaluation API
+- Natvis parsing infrastructure (already exists)
 
 ## Risk Analysis
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Performance degradation with many primitives | Medium | Limit primitive count, use efficient algorithms |
+| Performance degradation with many primitives | Medium | Limit primitive count, use efficient algorithms, add culling |
 | Transform sync issues | Medium | Use same transform matrix as image |
 | Memory overhead | Low | Clear overlay after rendering |
-| User data parsing complexity | Medium | Support standard types first, then custom |
+| Natvis parsing complexity | Low | Reuse existing UserTypeLoader patterns |
+| User adoption | Low | Provide good examples and documentation |
 
 ## Estimated Effort
 
-| Phase | Effort (hours) |
-|-------|----------------|
-| Phase 1: Core Rendering | 40-60 |
-| Phase 2: Data Binding | 30-40 |
-| Phase 3: UI Controls | 20-30 |
-| Phase 4: Advanced | TBD |
+| Phase | Effort (hours) | Priority |
+| |-------|----------------|----------|
+| Phase 1: Core Rendering | 40-60 | **Required** |
+| Phase 2: Data Binding (Natvis) | 30-40 | **Required** |
+| Phase 3: UI Controls | 20-30 | Optional |
+| Phase 4: Advanced | TBD | Future |
 
-Total Phase 1-3: ~90-130 hours
+**Total Phase 1-2 (MVP):** ~70-100 hours  
+**Total Phase 1-3 (Full feature):** ~90-130 hours
+
+## Example Usage
+
+After implementation, users would:
+
+1. **Define overlay in C++ code:**
+
+```cpp
+std::vector<cv::Point2f> featurePoints;
+std::vector<std::pair<cv::Point2f, cv::Point2f>> edges;
+
+// ... compute features ...
+featurePoints.push_back(cv::Point2f(100, 200));
+edges.push_back({cv::Point2f(50, 50), cv::Point2f(150, 150)});
+```
+
+2. **Add natvis file** (if using custom types):
+
+Copy `ImageWatchOverlay.natvis` to `%USERPROFILE%\Documents\Visual Studio 2022\Visualizers\`
+
+3. **Use in Image Watch:**
+
+```
+@overlay(myImage, featurePoints)
+```
+
+Or with custom overlay structure:
+
+```
+@overlay(myImage, myDebugOverlay)
+```
+
+4. **Result:** Image displayed with overlay graphics rendered on top, zooming/panning works for both image and overlay.
