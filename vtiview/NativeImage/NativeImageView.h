@@ -241,13 +241,37 @@ public:
 		}
 	}
 
-	Point BitmapToSourceXY(Point bitmapXY);
-	Point SourceToBitmapXY(Point sourceXY);
+ 	Point BitmapToSourceXY(Point bitmapXY);
+ 	Point SourceToBitmapXY(Point sourceXY);
+ 	
+ 	// Overlay methods (managed interface)
+ 	void AddPoint(float x, float y, Color color, float radius, float lineWidth)
+ 	{
+ 		AddOverlayPoint(x, y, color.R, color.G, color.B, color.A, radius, lineWidth);
+ 	}
+
+ 	void AddLine(float x0, float y0, float x1, float y1, Color color, float lineWidth)
+ 	{
+ 		AddOverlayLine(x0, y0, x1, y1, color.R, color.G, color.B, color.A, lineWidth);
+ 	}
+
+ 	void AddArc(float cx, float cy, float radius, float startAngle, float endAngle,
+ 	            Color color, float lineWidth)
+ 	{
+ 		AddOverlayArc(cx, cy, radius, startAngle, endAngle, 
+ 		              color.R, color.G, color.B, color.A, lineWidth);
+ 	}
+
+ 	void ClearOverlay();
+ 	bool HasOverlay() const { return !overlayGraphics_.IsEmpty(); }
+ 	
+ 	// Test method for POC validation
+ 	void AddTestOverlay();
 	
 private:
-	int ComputeNearestLowerLevel();
-	void ComputeWarpMatrix(vt::CMtx3x3<float>& m);
-	void ComputeWarpMatrix(vt::CMtx3x3<float>& m, int dLevel);
+ 	int ComputeNearestLowerLevel();
+ 	void ComputeWarpMatrix(vt::CMtx3x3<float>& m);
+ 	void ComputeWarpMatrix(vt::CMtx3x3<float>& m, int dLevel);
 		
 	void SetDefaultTransformParameters();
 	double GetColorMapPreScale(const ColorMap* cmap, int imageType);
@@ -294,6 +318,9 @@ public:
 	                   float lineWidth = 1.0f);
 	void ClearOverlay();
 	bool HasOverlay() const { return !overlayGraphics_.IsEmpty(); }
+	
+	// Test method for POC validation
+	void AddTestOverlay();
 };
 
 END_NI_NAMESPACE

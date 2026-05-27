@@ -557,4 +557,29 @@ void NativeImageView::ClearOverlay()
 	MarkAsDirty();
 }
 
+void NativeImageView::AddTestOverlay()
+{
+	// Add test overlay primitives to verify rendering
+	// Red point at (100, 100)
+	AddOverlayPoint(100.0f, 100.0f, 255, 0, 0, 255, 5.0f, 1.0f);
+	
+	// Green point at (200, 150)
+	AddOverlayPoint(200.0f, 150.0f, 0, 255, 0, 255, 7.0f, 1.0f);
+	
+	// Blue point at (300, 200)
+	AddOverlayPoint(300.0f, 200.0f, 0, 0, 255, 255, 6.0f, 1.0f);
+	
+	// Blue line from (50, 50) to (250, 250)
+	AddOverlayLine(50.0f, 50.0f, 250.0f, 250.0f, 0, 0, 255, 255, 2.0f);
+	
+	// Yellow line from (100, 300) to (300, 100)
+	AddOverlayLine(100.0f, 300.0f, 300.0f, 100.0f, 255, 255, 0, 255, 1.5f);
+	
+	// Cyan arc (half circle)
+	AddOverlayArc(150.0f, 150.0f, 40.0f, 0.0f, 3.14159f, 0, 255, 255, 255, 1.5f);
+	
+	// Magenta arc
+	AddOverlayArc(200.0f, 200.0f, 30.0f, 0.0f, 3.14159f, 255, 0, 255, 255, 2.0f);
+}
+
 END_NI_NAMESPACE
