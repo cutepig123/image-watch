@@ -126,6 +126,25 @@
                         </MultiBinding>
                     </MenuItem.IsEnabled>
                 </MenuItem>
+                <Separator/>
+                <MenuItem Header="Add Test Overlay" Click="ContextMenu_AddTestOverlayClick"
+                          DataContext="{Binding Path=PlacementTarget, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+                    <MenuItem.IsEnabled>
+                        <MultiBinding Converter="{StaticResource AndConverter}">
+                            <Binding Path="DataContext"/>
+                            <Binding Path="DataContext.View"/>
+                        </MultiBinding>
+                    </MenuItem.IsEnabled>
+                </MenuItem>
+                <MenuItem Header="Clear Overlay" Click="ContextMenu_ClearOverlayClick"
+                          DataContext="{Binding Path=PlacementTarget, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+                    <MenuItem.IsEnabled>
+                        <MultiBinding Converter="{StaticResource AndConverter}">
+                            <Binding Path="DataContext"/>
+                            <Binding Path="DataContext.View"/>
+                        </MultiBinding>
+                    </MenuItem.IsEnabled>
+                </MenuItem>
             </ContextMenu>            
         </Grid.ContextMenu>
     </Grid>

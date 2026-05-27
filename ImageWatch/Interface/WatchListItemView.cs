@@ -74,6 +74,22 @@ namespace Microsoft.ImageWatch.Interface
                 view_.MarkAsDirty();
         }
 
+        public void AddTestOverlay()
+        {
+            if (view_ != null)
+            {
+                view_.AddTestOverlay();
+            }
+        }
+
+        public void ClearOverlay()
+        {
+            if (view_ != null)
+            {
+                view_.ClearOverlay();
+            }
+        }
+
         public void EnableGrid(bool value)
         {
             if (view_ != null)

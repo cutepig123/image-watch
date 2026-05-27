@@ -204,6 +204,32 @@ namespace Microsoft.ImageWatch.Interface
             }
         }
 
+        private void ContextMenu_AddTestOverlayClick(object sender,
+            RoutedEventArgs e)
+        {
+            var item = DataContext as WatchListItem;
+            if (item == null)
+                return;
+
+            if (item.View != null)
+            {
+                item.View.AddTestOverlay();
+            }
+        }
+
+        private void ContextMenu_ClearOverlayClick(object sender,
+            RoutedEventArgs e)
+        {
+            var item = DataContext as WatchListItem;
+            if (item == null)
+                return;
+
+            if (item.View != null)
+            {
+                item.View.ClearOverlay();
+            }
+        }
+
         private void ContextMenu_LinkViewsChecked(object sender,
             RoutedEventArgs e)
         {
