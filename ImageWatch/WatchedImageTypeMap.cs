@@ -61,6 +61,7 @@ namespace Microsoft.ImageWatch
             AddOperator("rot90", typeof(WatchedImageRot90Op));
             AddOperator("rot180", typeof(WatchedImageRot180Op));
             AddOperator("rot270", typeof(WatchedImageRot270Op));
+            AddOperator("overlay", typeof(WatchedImageOverlayOp));
         }
 
         static void AddUserTypes(string path, string overrideName)
