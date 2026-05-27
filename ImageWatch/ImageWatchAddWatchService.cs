@@ -10,10 +10,16 @@ namespace Microsoft.ImageWatch
     [Guid("2CE087F4-6AB3-4BA7-AA66-1069C2F42AE3")]
     public interface IImageWatchAddWatchService 
     {
-        void AddWatch(string expression);        
+        void AddWatch(string expression);
+        void AddOverlayWatch(string expression);
     }
     
     public class ImageWatchAddWatchEventArgs : EventArgs
+    {
+        public string Expression { get; set; }
+    }
+    
+    public class ImageWatchAddOverlayEventArgs : EventArgs
     {
         public string Expression { get; set; }
     }
@@ -21,6 +27,7 @@ namespace Microsoft.ImageWatch
     public class ImageWatchAddWatchService : IImageWatchAddWatchService
     {
         public event EventHandler Add;
+        public event EventHandler AddOverlay;
 
         private void OnAdd(string expression)
         {
@@ -32,11 +39,28 @@ namespace Microsoft.ImageWatch
                 });
             }
         }
+        
+        private void OnAddOverlay(string expression)
+        {
+            if (AddOverlay != null)
+            {
+                AddOverlay(this, new ImageWatchAddOverlayEventArgs()
+                {
+                    Expression = expression
+                });
+            }
+        }
 
         public void AddWatch(string expression)
         {
             ImageWatchPackage.ShowToolWindow();
             OnAdd(expression);
+        }
+        
+        public void AddOverlayWatch(string expression)
+        {
+            ImageWatchPackage.ShowToolWindow();
+            OnAddOverlay(expression);
         }
     }
 }

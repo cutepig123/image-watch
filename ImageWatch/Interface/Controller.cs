@@ -37,16 +37,17 @@ namespace Microsoft.ImageWatch.Interface
             events_ = ImageWatchPackage.DTE.Events;
             dbgEvents_ = events_.DebuggerEvents;
 
-            dbgEvents_.OnContextChanged += DebuggerEvents_OnContextChanged;
-            dbgEvents_.OnEnterBreakMode += DebuggerEvents_OnEnterBreakMode;
-            dbgEvents_.OnEnterRunMode += DebuggerEvents_OnEnterRunMode;
-            dbgEvents_.OnEnterDesignMode += DebuggerEvents_OnEnterDesignMode;
-                        
-            ImageWatchPackage.AddWatchService.Add += AddWatchService_Add;
+             dbgEvents_.OnContextChanged += DebuggerEvents_OnContextChanged;
+             dbgEvents_.OnEnterBreakMode += DebuggerEvents_OnEnterBreakMode;
+             dbgEvents_.OnEnterRunMode += DebuggerEvents_OnEnterRunMode;
+             dbgEvents_.OnEnterDesignMode += DebuggerEvents_OnEnterDesignMode;
+                         
+             ImageWatchPackage.AddWatchService.Add += AddWatchService_Add;
+             ImageWatchPackage.AddWatchService.AddOverlay += AddWatchService_AddOverlay;
 
-            runModeTimer.Interval = TimeSpan.FromSeconds(1.0);
-            runModeTimer.Tick += runModeTimer_Tick;
-        }
+             runModeTimer.Interval = TimeSpan.FromSeconds(1.0);
+             runModeTimer.Tick += runModeTimer_Tick;
+         }
 
         public void FirstTimeEnterBreakMode()
         {
@@ -563,6 +564,44 @@ namespace Microsoft.ImageWatch.Interface
                 return;
 
             AddToWatchList(args.Expression);
+        }
+        
+        void AddWatchService_AddOverlay(object sender, EventArgs e)
+        {
+            var args = e as ImageWatchAddOverlayEventArgs;
+            if (args == null)
+                return;
+
+            AddOverlayToLastImage(args.Expression);
+        }
+        
+        void AddOverlayToLastImage(string overlayExpression)
+        {
+            // Find the last image in watch list
+            var lastImageItem = watchList_.Items
+                .Where(item => item.Image != null && item.ImageHasValidInfo)
+                .LastOrDefault();
+            
+            if (lastImageItem == null)
+            {
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine(
+                    "AddOverlayToLastImage: No image found in watch list");
+#endif
+                return;
+            }
+            
+            // Modify the expression to use @overlay syntax
+            string newExpression = string.Format("@overlay({0}, {1})",
+                lastImageItem.Expression, overlayExpression);
+            
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine(
+                "AddOverlayToLastImage: Creating overlay expression: {0}", newExpression);
+#endif
+            
+            // Update the image item's expression
+            lastImageItem.Expression = newExpression;
         }
 
         void runModeTimer_Tick(object sender, EventArgs e)

@@ -39,7 +39,16 @@ namespace Microsoft.ImageWatch
                 // clicking on magnifying glass on a nested/derived object
                 ex = Regex.Replace(ex, @",[!\w\d\[\]\(\)]+$", "");
                 
-                addSvc.AddWatch(ex);
+                // Id = 1: Add as image (default)
+                // Id = 2: Add as overlay
+                if (visualizerId == 2)
+                {
+                    addSvc.AddOverlayWatch(ex);
+                }
+                else
+                {
+                    addSvc.AddWatch(ex);
+                }
             }
             catch (Exception)
             {
