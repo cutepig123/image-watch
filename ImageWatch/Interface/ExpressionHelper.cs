@@ -628,5 +628,48 @@ namespace Microsoft.ImageWatch.Interface
                 return 0;
             }
         }
+
+        public static bool IsOverlayExpression(string expression)
+        {
+            return expression.TrimStart().StartsWith("@overlay(");
+        }
+
+        public static Tuple<string, string> ParseOverlayExpression(string expression)
+        {
+            var trimmed = expression.Trim();
+            if (!trimmed.StartsWith("@overlay(") || !trimmed.EndsWith(")"))
+                return null;
+
+            var args = trimmed.Substring(9, trimmed.Length - 10);
+            var parts = SplitCommaSeparated(args);
+
+            if (parts.Count != 2)
+                return null;
+
+            return Tuple.Create(parts[0].Trim(), parts[1].Trim());
+        }
+
+        private static List<string> SplitCommaSeparated(string args)
+        {
+            var result = new List<string>();
+            int depth = 0;
+            int start = 0;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == '(' || args[i] == '[' || args[i] == '<')
+                    depth++;
+                else if (args[i] == ')' || args[i] == ']' || args[i] == '>')
+                    depth--;
+                else if (args[i] == ',' && depth == 0)
+                {
+                    result.Add(args.Substring(start, i - start));
+                    start = i + 1;
+                }
+            }
+
+            result.Add(args.Substring(start));
+            return result;
+        }
     }
 }
