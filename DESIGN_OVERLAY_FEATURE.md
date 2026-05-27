@@ -4,6 +4,44 @@
 
 This document describes the design for adding overlay graphics support to Image Watch, enabling users to visualize geometric primitives (points, line segments, and arcs) on top of images during debugging.
 
+## Implementation Status
+
+### ✅ Completed (MVP - Phase 1 & 2)
+
+**Phase 1: Core Rendering (Native C++)**
+- ✅ Overlay primitive types (`vtiview/NativeImage/OverlayPrimitives.h`)
+  - OverlayPoint: x, y coordinates, radius, color
+  - OverlayLine: line segment with endpoints
+  - OverlayArc: arc with center, radius, angles
+- ✅ Anti-aliased rendering (`vtiview/NativeImage/OverlayPrimitives.cpp`)
+  - Xiaolin Wu's algorithm for smooth lines
+  - Anti-aliased points (filled circles)
+  - Arc rendering using line segments
+- ✅ NativeImageView integration
+  - AddOverlayPoint/Line/Arc methods
+  - ClearOverlay method
+  - Transform-aware rendering
+- ✅ C++/CLI managed wrapper
+
+**Phase 2: Data Binding (Natvis-based)**
+- ✅ @overlay() operator (`ImageWatchNativeHelpers/WatchedImageOverlayOp.h/.cpp`)
+- ✅ Operator registration in `ImageWatch/WatchedImageTypeMap.cs`
+- ✅ Example natvis file (`ImageWatch/Internal/ImageWatchOverlay.natvis`)
+- ✅ Expression parsing support in `ImageWatch/Interface/ExpressionHelper.cs`
+
+### 📋 Remaining (Future)
+
+**Phase 3: UI Controls (Optional)**
+- Overlay context menu in ImageViewer
+- Color picker, line width slider
+- Settings persistence
+
+**Phase 4: Advanced Features**
+- Interactive overlay editing
+- Overlay export/save
+- Multiple overlay layers
+- GPU acceleration
+
 ## Current Architecture Analysis
 
 ### Image Type System
