@@ -3,6 +3,7 @@
 #include "Namespace.h"
 #include "AutoPtr.h"
 #include "NativeImageBase.h"
+#include "OverlayPrimitives.h"
 #include <WinDef.h>
 
 namespace vt
@@ -277,6 +278,22 @@ private:
 	int colorMapSelectedBand_;
 	double scale_;
 	bool gridEnabled_;
+	
+	OverlayGraphics overlayGraphics_;
+
+public:
+	void AddOverlayPoint(float x, float y, 
+	                     vt::Byte r, vt::Byte g, vt::Byte b, vt::Byte a,
+	                     float radius = 3.0f, float lineWidth = 1.0f);
+	void AddOverlayLine(float x0, float y0, float x1, float y1,
+	                    vt::Byte r, vt::Byte g, vt::Byte b, vt::Byte a,
+	                    float lineWidth = 1.0f);
+	void AddOverlayArc(float cx, float cy, float radius,
+	                   float startAngle, float endAngle,
+	                   vt::Byte r, vt::Byte g, vt::Byte b, vt::Byte a,
+	                   float lineWidth = 1.0f);
+	void ClearOverlay();
+	bool HasOverlay() const { return !overlayGraphics_.IsEmpty(); }
 };
 
 END_NI_NAMESPACE

@@ -417,6 +417,16 @@ void NativeImageView::Render()
 		LastError = String::Format("Error: rendering failed: {0}",
 			NativeImageHelpers::HRToString(hr, false));
 	}
+	else
+	{
+		// Render overlay graphics after color mapping
+		if (!overlayGraphics_.IsEmpty())
+		{
+			vt::CMtx3x3<float> transform;
+			ComputeWarpMatrix(transform);
+			overlayGraphics_.Render(*view_, transform, (float)scale_);
+		}
+	}
 
 	isDirty_ = FAILED(hr);
 }
@@ -484,6 +494,67 @@ void NativeImageView::ReleaseNativeResources()
 		CloseHandle(fileMapping_);
 		fileMapping_ = INVALID_HANDLE_VALUE;
 	}
+}
+
+void NativeImageView::AddOverlayPoint(float x, float y,
+                                       vt::Byte r, vt::Byte g, vt::Byte b, vt::Byte a,
+                                       float radius, float lineWidth)
+{
+	OverlayPoint pt;
+	pt.x = x;
+	pt.y = y;
+	pt.radius = radius;
+	pt.lineWidth = lineWidth;
+	pt.color.r = r;
+	pt.color.g = g;
+	pt.color.b = b;
+	pt.color.a = a;
+	overlayGraphics_.points.push_back(pt);
+	MarkAsDirty();
+}
+
+void NativeImageView::AddOverlayLine(float x0, float y0, float x1, float y1,
+                                      vt::Byte r, vt::Byte g, vt::Byte b, vt::Byte a,
+                                      float lineWidth)
+{
+	OverlayLine line;
+	line.x0 = x0;
+	line.y0 = y0;
+	line.x1 = x1;
+	line.y1 = y1;
+	line.lineWidth = lineWidth;
+	line.color.r = r;
+	line.color.g = g;
+	line.color.b = b;
+	line.color.a = a;
+	overlayGraphics_.lines.push_back(line);
+	MarkAsDirty();
+}
+
+void NativeImageView::AddOverlayArc(float cx, float cy, float radius,
+                                     float startAngle, float endAngle,
+                                     vt::Byte r, vt::Byte g, vt::Byte b, vt::Byte a,
+                                     float lineWidth)
+{
+	OverlayArc arc;
+	arc.cx = cx;
+	arc.cy = cy;
+	arc.radius = radius;
+	arc.startAngle = startAngle;
+	arc.endAngle = endAngle;
+	arc.lineWidth = lineWidth;
+	arc.color.r = r;
+	arc.color.g = g;
+	arc.color.b = b;
+	arc.color.a = a;
+	overlayGraphics_.arcs.push_back(arc);
+	MarkAsDirty();
+}
+
+void NativeImageView::ClearOverlay()
+{
+	overlayGraphics_.Clear();
+	MarkAsDirty();
 }
 
 END_NI_NAMESPACE
