@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
   
-  <!-- OpenCV Point types -->
-  <!-- Id="1" = Add to Image Watch (as image) -->
-  <!-- Id="2" = Add as Overlay to Image Watch -->
+  <!-- OpenCV Point types - unified "Add to Image Watch" menu -->
+  <!-- System will automatically detect if it should be added as image or overlay -->
   
   <Type Name="cv::Point_<*>">
-    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" MenuName="Add as Overlay to Image Watch"/>
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
   </Type>
   
   <Type Name="cv::Point_<*>">
@@ -18,7 +17,7 @@
   
   <!-- cv::Point2f -->
   <Type Name="cv::Point2f">
-    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" MenuName="Add as Overlay to Image Watch"/>
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
   </Type>
   
   <Type Name="cv::Point2f">
@@ -30,7 +29,7 @@
   
   <!-- cv::Point2i -->
   <Type Name="cv::Point2i">
-    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" MenuName="Add as Overlay to Image Watch"/>
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
   </Type>
   
   <Type Name="cv::Point2i">
@@ -42,7 +41,7 @@
   
   <!-- cv::Point2d -->
   <Type Name="cv::Point2d">
-    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" MenuName="Add as Overlay to Image Watch"/>
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
   </Type>
   
   <Type Name="cv::Point2d">
@@ -54,7 +53,7 @@
   
   <!-- std::vector of cv::Point -->
   <Type Name="std::vector<cv::Point_<*>*>">
-    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" MenuName="Add as Overlay to Image Watch"/>
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
   </Type>
   
   <Type Name="std::vector<cv::Point_<*>*>">
@@ -66,12 +65,12 @@
   
   <!-- std::vector<cv::Point2f> -->
   <Type Name="std::vector<cv::Point2f*>">
-    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" MenuName="Add as Overlay to Image Watch"/>
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
   </Type>
   
   <!-- Generic Point2f structures -->
   <Type Name="Point2f">
-    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" MenuName="Add as Overlay to Image Watch"/>
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
   </Type>
   
   <Type Name="Point2f">
@@ -83,7 +82,7 @@
   
   <!-- Point2d -->
   <Type Name="Point2d">
-    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" MenuName="Add as Overlay to Image Watch"/>
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
   </Type>
   
   <Type Name="Point2d">
@@ -95,7 +94,7 @@
   
   <!-- Point2i -->
   <Type Name="Point2i">
-    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" MenuName="Add as Overlay to Image Watch"/>
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
   </Type>
   
   <Type Name="Point2i">
@@ -107,7 +106,7 @@
   
   <!-- std::vector<Point2f> -->
   <Type Name="std::vector<Point2f*>">
-    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="2" MenuName="Add as Overlay to Image Watch"/>
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
   </Type>
   
   <Type Name="std::vector<Point2f*>">

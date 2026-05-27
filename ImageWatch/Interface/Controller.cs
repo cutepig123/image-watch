@@ -43,7 +43,6 @@ namespace Microsoft.ImageWatch.Interface
              dbgEvents_.OnEnterDesignMode += DebuggerEvents_OnEnterDesignMode;
                          
              ImageWatchPackage.AddWatchService.Add += AddWatchService_Add;
-             ImageWatchPackage.AddWatchService.AddOverlay += AddWatchService_AddOverlay;
 
              runModeTimer.Interval = TimeSpan.FromSeconds(1.0);
              runModeTimer.Tick += runModeTimer_Tick;
@@ -563,45 +562,40 @@ namespace Microsoft.ImageWatch.Interface
             if (args == null)
                 return;
 
-            AddToWatchList(args.Expression);
-        }
-        
-        void AddWatchService_AddOverlay(object sender, EventArgs e)
-        {
-            var args = e as ImageWatchAddOverlayEventArgs;
-            if (args == null)
-                return;
-
-            AddOverlayToLastImage(args.Expression);
-        }
-        
-        void AddOverlayToLastImage(string overlayExpression)
-        {
-            // Find the last image in watch list
-            var lastImageItem = watchList_.Items
-                .Where(item => item.Image != null && item.ImageHasValidInfo)
-                .LastOrDefault();
-            
-            if (lastImageItem == null)
+            // Determine if this is an overlay type (points, lines)
+            // or an image type
+            if (IsOverlayExpression(args.Expression))
             {
-#if DEBUG
-                System.Diagnostics.Debug.WriteLine(
-                    "AddOverlayToLastImage: No image found in watch list");
-#endif
-                return;
+                AddOverlayToLastImage(args.Expression);
+            }
+            else
+            {
+                AddToWatchList(args.Expression);
+            }
+        }
+        
+        bool IsOverlayExpression(string expression)
+        {
+            // Check if the type is a points/lines vector
+            // by evaluating the type name
+            string value = null;
+            string type = null;
+            
+            if (!WatchedImageHelpers.EvaluateExpression(
+                InspectionContext, Frame, expression, ref value, ref type))
+            {
+                return false;
             }
             
-            // Modify the expression to use @overlay syntax
-            string newExpression = string.Format("@overlay({0}, {1})",
-                lastImageItem.Expression, overlayExpression);
+            // Check for known overlay types
+            if (type.Contains("Point2") || 
+                type.Contains("cv::Point") ||
+                type.Contains("vector<Point"))
+            {
+                return true;
+            }
             
-#if DEBUG
-            System.Diagnostics.Debug.WriteLine(
-                "AddOverlayToLastImage: Creating overlay expression: {0}", newExpression);
-#endif
-            
-            // Update the image item's expression
-            lastImageItem.Expression = newExpression;
+            return false;
         }
 
         void runModeTimer_Tick(object sender, EventArgs e)
