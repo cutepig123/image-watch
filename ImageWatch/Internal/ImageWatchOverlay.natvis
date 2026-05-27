@@ -1,33 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
   
-  <!-- Example overlay point type -->
-  <Type Name="OverlayPoint2D">
+  <!-- OpenCV Point types - enable right-click "Add to Image Watch" -->
+  <Type Name="cv::Point_<*>">
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
+  </Type>
+  
+  <Type Name="cv::Point_<*>">
     <Expand>
       <Item Name="[x]">x</Item>
       <Item Name="[y]">y</Item>
     </Expand>
   </Type>
   
-  <!-- Example overlay line type -->
-  <Type Name="OverlayLine2D">
+  <!-- cv::Point2f, cv::Point2i, cv::Point2d -->
+  <Type Name="cv::Point2f">
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
+  </Type>
+  
+  <Type Name="cv::Point2f">
     <Expand>
-      <Item Name="[x0]">x0</Item>
-      <Item Name="[y0]">y0</Item>
-      <Item Name="[x1]">x1</Item>
-      <Item Name="[y1]">y1</Item>
+      <Item Name="[x]">x</Item>
+      <Item Name="[y]">y</Item>
     </Expand>
   </Type>
   
-  <!-- Example overlay container -->
-  <Type Name="ImageWatchOverlay">
+  <Type Name="cv::Point2i">
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
+  </Type>
+  
+  <Type Name="cv::Point2i">
     <Expand>
-      <Item Name="[points]">points</Item>
-      <Item Name="[lines]">lines</Item>
-      <Item Name="[color_r]">r</Item>
-      <Item Name="[color_g]">g</Item>
-      <Item Name="[color_b]">b</Item>
-      <Item Name="[color_a]">a</Item>
+      <Item Name="[x]">x</Item>
+      <Item Name="[y]">y</Item>
+    </Expand>
+  </Type>
+  
+  <Type Name="cv::Point2d">
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
+  </Type>
+  
+  <Type Name="cv::Point2d">
+    <Expand>
+      <Item Name="[x]">x</Item>
+      <Item Name="[y]">y</Item>
+    </Expand>
+  </Type>
+  
+  <!-- std::vector of points -->
+  <Type Name="std::vector<cv::Point_<*>*>">
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
+  </Type>
+  
+  <Type Name="std::vector<cv::Point_<*>*>">
+    <Expand>
+      <Item Name="[size]">_Mypair._Myval2._Mylast - _Mypair._Myval2._Myfirst</Item>
+      <Item Name="[data]">_Mypair._Myval2._Myfirst</Item>
+    </Expand>
+  </Type>
+  
+  <!-- Generic Point2f structures -->
+  <Type Name="Point2f">
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
+  </Type>
+  
+  <Type Name="Point2f">
+    <Expand>
+      <Item Name="[x]">x</Item>
+      <Item Name="[y]">y</Item>
+    </Expand>
+  </Type>
+  
+  <Type Name="Point2d">
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
+  </Type>
+  
+  <Type Name="Point2d">
+    <Expand>
+      <Item Name="[x]">x</Item>
+      <Item Name="[y]">y</Item>
+    </Expand>
+  </Type>
+  
+  <Type Name="Point2i">
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
+  </Type>
+  
+  <Type Name="Point2i">
+    <Expand>
+      <Item Name="[x]">x</Item>
+      <Item Name="[y]">y</Item>
+    </Expand>
+  </Type>
+  
+  <!-- std::vector of Point2f -->
+  <Type Name="std::vector<Point2f*>">
+    <UIVisualizer ServiceId="{A452AFEA-3DF6-46BB-9177-C0B08F318025}" Id="1" MenuName="Add to Image Watch"/>
+  </Type>
+  
+  <Type Name="std::vector<Point2f*>">
+    <Expand>
+      <Item Name="[size]">_Mypair._Myval2._Mylast - _Mypair._Myval2._Myfirst</Item>
+      <Item Name="[data]">_Mypair._Myval2._Myfirst</Item>
     </Expand>
   </Type>
   
