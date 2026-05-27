@@ -168,6 +168,7 @@
     <ClInclude Include="Namespace.h" />
     <ClInclude Include="NativeImageHelpers.h" />
     <ClInclude Include="NativeImageView.h" />
+    <ClInclude Include="OverlayPrimitives.h" />
     <ClInclude Include="RemoteNativeImage.h" />
     <ClInclude Include="Stdafx.h" />
   </ItemGroup>
@@ -178,6 +179,7 @@
     <ClCompile Include="NativeImageBase.cpp" />
     <ClCompile Include="NativeImageHelpers.cpp" />
     <ClCompile Include="NativeImageView.cpp" />
+    <ClCompile Include="OverlayPrimitives.cpp" />
     <ClCompile Include="ParallelMinMax.cpp">
       <CompileAsManaged>false</CompileAsManaged>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
