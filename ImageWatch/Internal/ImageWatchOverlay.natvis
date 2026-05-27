@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  
+  <!-- Example overlay point type -->
+  <Type Name="OverlayPoint2D">
+    <Expand>
+      <Item Name="[x]">x</Item>
+      <Item Name="[y]">y</Item>
+    </Expand>
+  </Type>
+  
+  <!-- Example overlay line type -->
+  <Type Name="OverlayLine2D">
+    <Expand>
+      <Item Name="[x0]">x0</Item>
+      <Item Name="[y0]">y0</Item>
+      <Item Name="[x1]">x1</Item>
+      <Item Name="[y1]">y1</Item>
+    </Expand>
+  </Type>
+  
+  <!-- Example overlay container -->
+  <Type Name="ImageWatchOverlay">
+    <Expand>
+      <Item Name="[points]">points</Item>
+      <Item Name="[lines]">lines</Item>
+      <Item Name="[color_r]">r</Item>
+      <Item Name="[color_g]">g</Item>
+      <Item Name="[color_b]">b</Item>
+      <Item Name="[color_a]">a</Item>
+    </Expand>
+  </Type>
+  
+</AutoVisualizer>
