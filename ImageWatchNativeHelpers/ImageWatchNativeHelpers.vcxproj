@@ -146,6 +146,7 @@
     <ClInclude Include="WatchedImageImage.h" />
     <ClInclude Include="WatchedImageNormOp.h" />
     <ClInclude Include="WatchedImageOperator.h" />
+    <ClInclude Include="WatchedImageOverlayOp.h" />
     <ClInclude Include="WatchedImagePtrOp.h" />
     <ClInclude Include="WatchedImageScaleOp.h" />
     <ClInclude Include="WatchedImageScaleOpBase.h" />
@@ -171,6 +172,7 @@
     <ClCompile Include="WatchedImageImage.cpp" />
     <ClCompile Include="WatchedImageNormOp.cpp" />
     <ClCompile Include="WatchedImageOperator.cpp" />
+    <ClCompile Include="WatchedImageOverlayOp.cpp" />
     <ClCompile Include="WatchedImagePtrOp.cpp" />
     <ClCompile Include="WatchedImageScaleOp.cpp" />
     <ClCompile Include="WatchedImageScaleOpBase.cpp" />
